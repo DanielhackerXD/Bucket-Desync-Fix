@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.7.11",
+  "package": "com.danielhackerxd.bucketsyncfix.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [],
+  "client": [
+    "MixinPlayerControllerMP"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

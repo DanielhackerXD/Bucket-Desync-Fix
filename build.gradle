@@ -1,0 +1,101 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = '1.0.0'
+group = 'com.danielhackerxd.bucketsyncfix' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'BucketDesyncFix-1.12.2'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+minecraft {
+    mappings channel: 'snapshot', version: '20171003-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+
+            // Standalone Mixin in the dev environment (in the built jar the manifest does this instead)
+            args '--tweakClass', 'org.spongepowered.asm.launch.MixinTweaker', '--mixin', 'mixins.bucketsyncfix.json'
+        }
+
+        server {
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
+}
+
+repositories {
+    maven { url = 'https://repo.spongepowered.org/maven' }
+}
+
+configurations {
+    // everything in "shade" is compiled against, available at runtime and bundled into the final jar
+    shade
+    implementation.extendsFrom shade
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+
+    // Plain SpongePowered Mixin. 0.7.11 is the version made for Minecraft 1.12.2 (ASM 5);
+    // do not use 0.8+ here. transitive = false: Minecraft already ships asm/guava/gson/log4j.
+    shade('org.spongepowered:mixin:0.7.11-SNAPSHOT') {
+        transitive = false
+    }
+}
+
+jar {
+    // bundle Mixin inside the mod jar
+    from { configurations.shade.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'LICENSE.txt', 'META-INF/maven/**', 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+
+    manifest {
+        attributes([
+            "Specification-Title": "bucketsyncfix",
+            "Specification-Vendor": "danielhackerxd",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"danielhackerxd",
+
+            // makes FML start Mixin, read the config below, and still load this jar as a normal mod
+            "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+            "TweakOrder": 0,
+            "MixinConfigs": "mixins.bucketsyncfix.json",
+            "ForceLoadAsMod": "true",
+
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
