@@ -2,11 +2,7 @@ package com.danielhackerxd.bucketsyncfix;
 
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Client-side only. All the logic lives in the mixin
- * {@link com.danielhackerxd.bucketsyncfix.mixin.MixinPlayerControllerMP}; this class only
- * exists so the jar shows up as a proper mod in the mod list.
- */
+
 @Mod(
         modid = BucketSyncFix.MODID,
         name = BucketSyncFix.NAME,
