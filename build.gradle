@@ -1,0 +1,90 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = '1.0.0'
+group = 'com.danielhackerxd.bucketsyncfix' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'BucketDesyncFix-1.12.2'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+minecraft {
+    mappings channel: 'snapshot', version: '20171003-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+        }
+
+        server {
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
+}
+
+repositories {
+    // CurseForge mods as Maven dependencies: curse.maven:<slug>-<projectId>:<fileId>
+    maven { url = 'https://cursemaven.com' }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+
+    // Compile against ONE Mixin provider (FermiumBooter 1.5.1, CurseForge project 968474, file 8683582;
+    // it bundles Mixin 0.8.7) just to get the Mixin annotations. compileOnly: it is NOT packed into our jar.
+    // At runtime players need ANY ONE of: MixinBooter, FermiumBooter, MixinBootstrap, Mixin 0.7-0.8 Compatibility.
+    compileOnly 'curse.maven:fermiumbooter-968474:8683582'
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "bucketsyncfix",
+            "Specification-Vendor": "danielhackerxd",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"danielhackerxd",
+
+            // Standard Mixin manifest entries. They work with ANY mod that ships Mixin on 1.12.2
+            // (MixinBooter, FermiumBooter, MixinBootstrap, Mixin 0.7-0.8 Compatibility): the tweaker class and the
+            // Mixin library come from whichever of those mods is installed, nothing is bundled here.
+            "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+            "TweakOrder": 0,
+            "MixinConfigs": "mixins.bucketsyncfix.json",
+            "ForceLoadAsMod": "true",
+
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
